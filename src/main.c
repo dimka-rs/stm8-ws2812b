@@ -9,11 +9,22 @@ typedef struct
     uint8_t red;
     uint8_t blue;
 
-} ws2812b_frame_t;
+} ws2812b_led_t;
 
 /* Private function prototypes -----------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
+void init(void)
+{
+    // init clock to 16 MHz
+    // HSIDIV = 1, CPUDIV = 1
+    CLK->CKDIVR = 0;
+
+    // init GPIO
+    GPIOB->DDR |= LED_PIN | WS2812B_PIN;
+}
+
+
 static void delay_us(uint32_t ms)
 {
     // very very rough estimation
@@ -58,59 +69,77 @@ void ws2812b_send_byte(uint8_t byte)
 
 }
 
-void ws2812b_send_frame(ws2812b_frame_t *frame, uint8_t size)
+void ws2812b_send_leds(ws2812b_led_t *leds, uint8_t count)
 {
-    for(uint8_t i = 0; i < size; i++)
+    for(uint8_t i = 0; i < count; i++)
     {
         // G7..G0 R7..R0 B7..B0, MSB first
-        ws2812b_send_byte(frame[i].green);
-        ws2812b_send_byte(frame[i].red);
-        ws2812b_send_byte(frame[i].blue);
+        ws2812b_send_byte(leds[i].green);
+        ws2812b_send_byte(leds[i].red);
+        ws2812b_send_byte(leds[i].blue);
     }
     return;
 }
 
 void main(void)
 {
+	init();
 
+    #define LEDS_COUNT 12
+    ws2812b_led_t leds[LEDS_COUNT];
 
-    // init clock to 16 MHz
-    // HSIDIV = 1, CPUDIV = 1
-    CLK->CKDIVR = 0;
+	#define MAX_VAL 16
+	uint8_t current_led = 0;
+	uint8_t current_val = MAX_VAL;
+	uint8_t next_led;
 
-    // init GPIO
-    GPIOB->DDR |= LED_PIN | WS2812B_PIN;
-
-    #define FRAME_SIZE 3
-    ws2812b_frame_t frame[FRAME_SIZE] = {{0, 0, 0}, {0, 0, 0}, { 0, 0, 0}};
-
-    uint8_t val = 0;
-    uint8_t dir = 0;
-    uint8_t shift = 0;
-    #define VAL_MAX 16
-    #define VAL_MIN 0
     ws2812b_send_reset();
     while(1) {
-        if(dir == 0 && val >  VAL_MIN) val--;
-        if(dir > 0  && val <  VAL_MAX) val++;
-        if(dir > 0  && val >= VAL_MAX) dir = 0;
-        if(dir == 0 && val <= VAL_MIN) { dir = 1; shift++; }
-
-        // sort of memset
-        for(uint8_t i = 0; i < sizeof(frame); i++)
+/*
+		// sort of memset
+        for(uint8_t i = 0; i < sizeof(leds); i++)
         {
-            *(((uint8_t *) frame) + i) = 0;
+            *(((uint8_t *) leds) + i) = 0;
         }
-        frame[(shift + 0) % 3].green = val;
-        frame[(shift + 1) % 3].red = val;
-        frame[(shift + 2) % 3].blue = val;
+*/
 
-        ws2812b_send_frame(frame, FRAME_SIZE);
-        ws2812b_send_frame(frame, FRAME_SIZE);
-        ws2812b_send_frame(frame, FRAME_SIZE);
-        ws2812b_send_frame(frame, FRAME_SIZE);
+		// green background
+		for(uint8_t i = 0; i < LEDS_COUNT; i++)
+		{
+			leds[i].green = 1;
+			leds[i].red = 0;
+			leds[i].blue = 0;
+		}
+
+		// if we done with this led, move to next
+		if(current_val == 0) {
+			current_led++;
+			current_val = MAX_VAL;
+		}
+
+		// if this led was last one, start from 0
+		if(current_led == LEDS_COUNT) current_led = 0;
+
+		// decrease current led brightness
+		current_val--;
+		leds[current_led].red = current_val;
+
+		// increase next led brightness
+		if(current_led < (LEDS_COUNT - 1))
+		{
+			next_led = current_led + 1;
+		} else {
+			next_led = 0;
+		}
+		leds[next_led].red = MAX_VAL - current_val;
+
+		// send data
+        for(uint8_t i = 0; i < LEDS_COUNT; i++)
+		{
+			ws2812b_send_leds(leds, LEDS_COUNT);
+		}
         ws2812b_send_reset();
-        delay_us(60000);
+        //delay_us(1000);
     }
 
 }
