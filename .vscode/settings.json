@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "stm8s.h": "c"
+    },
+    "C_Cpp.intelliSenseEngineFallback": "Disabled"
+}

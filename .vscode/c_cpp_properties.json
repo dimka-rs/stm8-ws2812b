@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/inc",
+                "${env:HOME}/apps/sdcc/share/sdcc/include"
+            ],
+            "defines": [
+                "STM8S103",
+                "__SDCC",
+                "__SDCC_VERSION_MAJOR=3 * 10000",
+                "_SDCC_VERSION_MINOR=8 * 100",
+                "_SDCC_VERSION_PATCH=0"
+            ],
+            "compilerPath": "${HOME}/apps/sdcc/bin/sdcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "${default}"
+        }
+    ],
+    "version": 4
+}
