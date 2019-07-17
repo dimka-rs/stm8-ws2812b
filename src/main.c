@@ -92,6 +92,7 @@ void main(void)
 	uint8_t current_led = 0;
 	uint8_t current_val = MAX_VAL;
 	uint8_t next_led;
+	uint8_t bg_blue = 0;
 
     ws2812b_send_reset();
     while(1) {
@@ -103,22 +104,37 @@ void main(void)
         }
 */
 
-		// green background
-		for(uint8_t i = 0; i < LEDS_COUNT; i++)
-		{
-			leds[i].green = 1;
-			leds[i].red = 0;
-			leds[i].blue = 0;
-		}
-
 		// if we done with this led, move to next
 		if(current_val == 0) {
 			current_led++;
 			current_val = MAX_VAL;
 		}
 
-		// if this led was last one, start from 0
-		if(current_led == LEDS_COUNT) current_led = 0;
+		// if this led was last one, start from 0 and change bg
+		if(current_led == LEDS_COUNT)
+		{
+			current_led = 0;
+			if(bg_blue == 1)
+			{
+				bg_blue = 0;
+			} else {
+				bg_blue = 1;
+			}
+		}
+
+		// feel background
+		for(uint8_t i = 0; i < LEDS_COUNT; i++)
+		{
+			if(bg_blue)
+			{
+				leds[i].blue = 1;
+				leds[i].green = 0;
+			} else {
+				leds[i].blue = 0;
+				leds[i].green = 1;
+			}
+			leds[i].red = 0;
+		}
 
 		// decrease current led brightness
 		current_val--;
@@ -139,7 +155,7 @@ void main(void)
 			ws2812b_send_leds(leds, LEDS_COUNT);
 		}
         ws2812b_send_reset();
-        //delay_us(1000);
+        delay_us(100000);
     }
 
 }
